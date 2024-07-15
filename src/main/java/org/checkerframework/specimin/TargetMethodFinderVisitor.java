@@ -359,6 +359,7 @@ public class TargetMethodFinderVisitor extends ModifierVisitor<Void> {
     } else {
       updateUnfoundMethods(methodName);
     }
+
     Visitable result = super.visit(method, p);
     insideTargetMember = oldInsideTargetMember;
 
@@ -392,6 +393,7 @@ public class TargetMethodFinderVisitor extends ModifierVisitor<Void> {
         Visitable result = super.visit(node, arg);
         usedTypeElement.add(this.classFQName);
         insideTargetMember = oldInsideTargetMember;
+
         return result;
       }
     }
@@ -427,6 +429,7 @@ public class TargetMethodFinderVisitor extends ModifierVisitor<Void> {
           resolvedMethod.getPackageName() + "." + resolvedMethod.getClassName(),
           usedTypeElement,
           nonPrimaryClassesToPrimaryClass);
+
       insideTargetMember = true;
       targetMethods.add(resolvedMethod.getQualifiedSignature());
       // make sure that differences in spacing does not interfere with the result
@@ -460,6 +463,7 @@ public class TargetMethodFinderVisitor extends ModifierVisitor<Void> {
     } else {
       updateUnfoundMethods(methodName);
     }
+
     Visitable result = super.visit(method, p);
     insideTargetMember = oldInsideTargetMember;
     return result;
@@ -510,6 +514,7 @@ public class TargetMethodFinderVisitor extends ModifierVisitor<Void> {
         }
       }
     }
+
     return super.visit(para, p);
   }
 
@@ -702,6 +707,7 @@ public class TargetMethodFinderVisitor extends ModifierVisitor<Void> {
   @Override
   public Visitable visit(EnumConstantDeclaration enumConstantDeclaration, Void p) {
     Node parentNode = enumConstantDeclaration.getParentNode().orElseThrow();
+
     if (parentNode instanceof EnumDeclaration) {
       if (usedTypeElement.contains(
           ((EnumDeclaration) parentNode)
@@ -714,6 +720,7 @@ public class TargetMethodFinderVisitor extends ModifierVisitor<Void> {
         insideTargetMember = true;
         Visitable result = super.visit(enumConstantDeclaration, p);
         insideTargetMember = oldInsideTargetMember;
+
         return result;
       }
     }
@@ -926,7 +933,6 @@ public class TargetMethodFinderVisitor extends ModifierVisitor<Void> {
       qualifiedClassName = qualifiedClassName.substring(0, qualifiedClassName.indexOf("<"));
     }
     usedTypeElement.add(qualifiedClassName);
-
     // in case this class is not a primary class.
     if (nonPrimaryClassesToPrimaryClass.containsKey(qualifiedClassName)) {
       updateUsedClassWithQualifiedClassName(
