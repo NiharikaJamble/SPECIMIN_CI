@@ -361,6 +361,7 @@ public class SpeciminRunner {
             targetMethodNames,
             targetFieldNames,
             nonPrimaryClassesToPrimaryClass,
+            existingClassesToFilePath,
             enumVisitor.getUsedEnum());
 
     for (CompilationUnit cu : parsedTargetFiles.values()) {
@@ -374,15 +375,14 @@ public class SpeciminRunner {
               + unfoundMethodsTable(unfoundMethods));
     }
     SolveMethodOverridingVisitor solveMethodOverridingVisitor =
-        new SolveMethodOverridingVisitor(
-            finder.getTargetMethods(), finder.getUsedMembers(), finder.getUsedTypeElement());
+        new SolveMethodOverridingVisitor(finder);
     for (CompilationUnit cu : parsedTargetFiles.values()) {
       cu.accept(solveMethodOverridingVisitor, null);
     }
 
     Set<String> relatedClass = new HashSet<>(parsedTargetFiles.keySet());
     // add all files related to the targeted methods
-    for (String classFullName : solveMethodOverridingVisitor.getUsedClass()) {
+    for (String classFullName : solveMethodOverridingVisitor.getUsedTypeElements()) {
       String directoryOfFile = classFullName.replace(".", "/") + ".java";
       File thisFile = new File(root + directoryOfFile);
       // classes from JDK are automatically on the classpath, so UnsolvedSymbolVisitor will not
@@ -404,7 +404,7 @@ public class SpeciminRunner {
         }
       }
     }
-    Set<String> classToFindInheritance = solveMethodOverridingVisitor.getUsedClass();
+    Set<String> classToFindInheritance = solveMethodOverridingVisitor.getUsedTypeElements();
     Set<String> totalSetOfAddedInheritedClasses = classToFindInheritance;
     InheritancePreserveVisitor inheritancePreserve;
     while (!classToFindInheritance.isEmpty()) {
@@ -431,7 +431,7 @@ public class SpeciminRunner {
       inheritancePreserve.emptyAddedClasses();
     }
 
-    Set<String> updatedUsedClass = solveMethodOverridingVisitor.getUsedClass();
+    Set<String> updatedUsedClass = solveMethodOverridingVisitor.getUsedTypeElements();
     updatedUsedClass.addAll(totalSetOfAddedInheritedClasses);
 
     // remove the unsolved annotations in the newly added files.
@@ -442,10 +442,7 @@ public class SpeciminRunner {
     updatedUsedClass.addAll(annoRemover.getSolvedAnnotationFullName());
 
     MustImplementMethodsVisitor mustImplementMethodsVisitor =
-        new MustImplementMethodsVisitor(
-            solveMethodOverridingVisitor.getUsedMembers(),
-            updatedUsedClass,
-            existingClassesToFilePath);
+        new MustImplementMethodsVisitor(solveMethodOverridingVisitor);
 
     for (CompilationUnit cu : parsedTargetFiles.values()) {
       cu.accept(mustImplementMethodsVisitor, null);
@@ -453,10 +450,7 @@ public class SpeciminRunner {
 
     PrunerVisitor methodPruner =
         new PrunerVisitor(
-            finder.getTargetMethods(),
-            targetFieldNames,
-            mustImplementMethodsVisitor.getUsedMembers(),
-            mustImplementMethodsVisitor.getUsedClass(),
+            mustImplementMethodsVisitor,
             finder.getResolvedYetStuckMethodCall(),
             classAndUnresolvedInterface);
 
@@ -486,7 +480,7 @@ public class SpeciminRunner {
         if (typesToChange.containsKey(simpleName)) {
           continue;
         }
-        if (!finder.getUsedTypeElement().contains(classFullyQualfiedName)) {
+        if (!finder.getUsedTypeElements().contains(classFullyQualfiedName)) {
           continue;
         }
       }
